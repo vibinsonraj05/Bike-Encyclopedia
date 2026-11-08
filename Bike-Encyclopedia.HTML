@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike Encyclopedia</title>
+    <Style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            background-color: #8EC5FC;
+            background-image: linear-gradient(62deg, #8EC5FC 0%, #E0C3FC 100%);
+
+        }
+        input {
+            width: 50%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        #bikeContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .bike {
+            width: 200px;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+        .bike img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .bike:hover {
+            transform: scale(1.05);
+        }
+        /* Premium bike details modal */
+        #bikeModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            padding: 24px;
+            background: rgba(8, 13, 25, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        #bikeModal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            width: min(900px, 94vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            align-items: center;
+            gap: 30px;
+            padding: 30px;
+            color: #f8fafc;
+            text-align: left;
+            background: linear-gradient(145deg, rgba(24, 34, 55, 0.98), rgba(12, 19, 35, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 24px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48), 0 0 35px rgba(96, 165, 250, 0.12);
+            animation: modalPop 0.32s cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        .modal-image-wrap {
+            overflow: hidden;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-content img {
+            display: block;
+            width: 100%;
+            max-height: 430px;
+            object-fit: contain;
+            transition: transform 0.45s ease;
+        }
+
+        .modal-image-wrap:hover img {
+            transform: scale(1.035);
+        }
+
+        .modal-details {
+            padding: 8px 6px 8px 0;
+        }
+
+        .modal-eyebrow {
+            margin: 0 0 10px;
+            color: #7dd3fc;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+        }
+
+        .modal-content h2 {
+            margin: 0 0 16px;
+            color: #ffffff;
+            font-size: clamp(25px, 4vw, 38px);
+            line-height: 1.12;
+        }
+
+        #bikeDescription {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            z-index: 2;
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            color: #e2e8f0;
+            font-size: 27px;
+            line-height: 1;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+            background: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: translateY(18px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @media (max-width: 680px) {
+            #bikeModal { padding: 14px; }
+            .modal-content {
+                width: 100%;
+                grid-template-columns: 1fr;
+                gap: 18px;
+                padding: 22px;
+                border-radius: 20px;
+            }
+            .modal-content img { max-height: 270px; }
+            .modal-details { padding: 0; }
+            .modal-content h2 { padding-right: 28px; }
+        }
+    </Style>
+</head>
+<body>
+
+    <!-- Search Bar -->
+    <input type="text" id="searchInput" placeholder="Search for bikes..." onkeyup="searchBikes()">
+    
+    <!-- Container for Bikes -->
+    <div id="bikeContainer"></div>
+
+    <!-- Modal for Bike Details -->
+    <div id="bikeModal" onclick="if (event.target === this) closeModal()">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="bikeName">
+            <button class="close-btn" type="button" aria-label="Close details" onclick="closeModal()">&times;</button>
+            <div class="modal-image-wrap">
+                <img id="bikeImage" src="" alt="Bike Image">
+            </div>
+            <div class="modal-details">
+                <p class="modal-eyebrow">Bike Encyclopedia</p>
+                <h2 id="bikeName"></h2>
+                <p id="bikeDescription"></p>
+            </div>
+        </div>
+    </div>
+
+   <script>
+    const bikes = [
+    { id: "bike1", name: "Harley-Davidson", image: "./asset/harley davidson.jpeg", description: "An iconic American cruiser bike with a powerful V-twin engine." },
+    { id: "bike2", name: "Kawasaki Ninja H2", image: "./asset/kawasaki.jpeg", description: "A supercharged sportbike with cutting-edge aerodynamics." },
+    { id: "bike3", name: "Suzuki Hayabusa", image: "./asset/hayabusa.jpeg", description: "A high-speed sportbike with smooth power delivery." },
+    { id: "bike4", name: "Yamaha R15", image: "./asset/r15.jpeg", description: "A lightweight racing-inspired bike with excellent handling." },
+    { id: "bike5", name: "Royal Enfield Classic 350", image: "./asset/royal enfield.jpeg", description: "A retro-styled cruiser known for its durability." },
+    { id: "bike6", name: "BMW S1000RR", image: "./asset/bmw.jpeg", description: "A premium German superbike known for its power." },
+    { id: "bike7", name: "Ola Electric", image: "./asset/ola.jpeg", description: "An electric superbike with aggressive styling." },
+    { id: "bike8", name: "Hero Honda CBZ", image: "./asset/hero honda.jpeg", description: "A reliable commuter bike with a smooth engine." },
+    { id: "bike9", name: "KTM Duke 390", image: "./asset/ktm.jpeg", description: "A lightweight naked bike with sharp performance." },
+    { id: "bike10", name: "Suzuki Access", image: "./asset/suzuki access.jpeg", description: "A fuel-efficient and comfortable scooter for daily rides." },
+    { id: "bike11", name: "TVS Phoenix", image: "./asset/tvs phoenix.jpeg", description: "A versatile commuter bike with good mileage." },
+    { id: "bike12", name: "Yamaha MT-15", image: "./asset/yamaha mt-15.jpeg", description: "A stylish and aggressive street bike." },
+    { id: "bike13", name: "Bajaj Pulsar NS200", image: "./asset/bajaj pulsar.jpeg", description: "A budget-friendly naked sports bike." },
+    { id: "bike14", name: "TVS Raider 125", image: "./asset/tvs raider 125.jpeg", description: "A commuter bike with a sporty design." },
+    { id: "bike15", name: "Yamaha FZX", image: "./asset/yamaha fz x.jpeg", description: "A neo-retro motorcycle with a strong road presence." },
+    { id: "bike16", name: "Royal Enfield GT650", image: "./asset/gt650.jpeg", description: "A powerful cafe racer with a twin-cylinder engine." },
+    { id: "bike17", name: "Honda Dio", image: "./asset/dio.jpeg", description: "A stylish scooter with great performance for city rides." },
+    { id: "bike18", name: "Honda Activa", image: "./asset/activa.jpeg", description: "India's most popular scooter with a refined engine." },
+    { id: "bike19", name: "Triumph Speed Triple", image: "./asset/triumph speed triple.jpg", description: "A performance-oriented naked bike with a triple engine." },
+    { id: "bike20", name: "Ducati Panigale V4", image: "./asset/ducati panigale v4.jpg", description: "An Italian masterpiece with a high-revving V4 engine." },
+    { id: "bike21", name: "Aprilia RSV4", image: "./asset/aprilia rsv4.jpg", description: "A track-ready superbike with cutting-edge electronics." },
+    { id: "bike22", name: "Honda CBR650R", image: "./asset/honda cbr650r.jpg", description: "A mid-range sportbike with inline-four power." },
+    { id: "bike23", name: "Benelli TRK 502", image: "./asset/benelli trk50.jpg", description: "An adventure touring bike with rugged capabilities." },
+    { id: "bike24", name: "Kawasaki Z900", image: "./asset/kawasaki z900.jpg", description: "A streetfighter with a powerful 948cc engine." },
+    { id: "bike25", name: "Bajaj Dominar 400", image: "./asset/bajaj dominar.jpg", description: "A power cruiser with long-distance touring capabilities." },
+    { id: "bike26", name: "Husqvarna Vitpilen 250", image: "./asset/husqvarna vitpilen.jpg", description: "A lightweight cafe racer with a futuristic design." },
+    { id: "bike27", name: "KTM RC 390", image: "./asset/ktm rc390.jpg", description: "A track-focused sportbike with aggressive styling." },
+    { id: "bike28", name: "Harley-Davidson Street 750", image: "./asset/harley street750.jpg", description: "A compact cruiser with urban-friendly ergonomics." },
+    { id: "bike29", name: "Royal Enfield Himalayan", image: "./asset/royal enfield himalayan.jpg", description: "An adventure bike built for off-road and touring." },
+    { id: "bike30", name: "Honda CB350", image: "./asset/honda cb350.jpg", description: "A modern classic motorcycle with a retro feel." },
+    { id: "bike31", name: "Yamaha R3", image: "./asset/yamaha r3.jpg", description: "A lightweight sports bike perfect for beginners." },
+    { id: "bike32", name: "Hero Xpulse 200", image: "./asset/hero xpulse.jpg", description: "A dual-sport bike built for adventure seekers." },
+    { id: "bike33", name: "Ducati Scrambler", image: "./asset/ducati scrambler.jpg", description: "A fun and stylish retro motorcycle for city rides." },
+    { id: "bike34", name: "BMW G310R", image: "./asset/bmw g310r.jpg", description: "A compact roadster from BMW with premium build quality." },
+    { id: "bike35", name: "TVS Apache RR310", image: "./asset/tvs apache rr310.jpg", description: "A race-inspired sports bike with premium features." },
+    { id: "bike36", name: "Honda Hornet 2.0", image: "./asset/honda hornet.jpg", description: "A stylish and muscular streetfighter bike." },
+    { id: "bike37", name: "Bajaj Avenger 220", image: "./asset/bajaj avenger.jpg", description: "A comfortable cruiser bike for long rides." },
+    { id: "bike38", name: "Suzuki Burgman Street", image: "./asset/suzuki burgman.jpg", description: "A maxi-style scooter with premium features." },
+    { id: "bike39", name: "Kawasaki Versys 650", image: "./asset/kawasaki versys.jpg", description: "A mid-size adventure touring bike for long rides." },
+    { id: "bike40", name: "Ducati Multistrada V4", image: "./asset/ducati multistrada.jpg", description: "A high-performance adventure touring motorcycle." }
+  ];
+  
+
+// Function to load bikes initially
+function loadBikes() {
+    displayBikes(bikes);
+}
+
+// Function to display bikes
+function displayBikes(bikeList) {
+    let bikeContainer = document.getElementById("bikeContainer");
+    bikeContainer.innerHTML = ""; // Clear the container before displaying bikes
+
+    if (bikeList.length === 0) {
+        bikeContainer.innerHTML = "<p>No bikes found.</p>";
+        return;
+    }
+
+    bikeList.forEach(bike => {
+        let bikeDiv = document.createElement("div");
+        bikeDiv.classList.add("bike");
+        bikeDiv.innerHTML = `<img src="${bike.image}" alt="${bike.name}" onclick="openBikeModal('${bike.id}')">`;
+        bikeContainer.appendChild(bikeDiv);
+    });
+}
+
+// Function to search bikes
+function searchBikes() {
+    let searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    let filteredBikes = bikes.filter(bike => bike.name.toLowerCase().includes(searchTerm));
+    displayBikes(filteredBikes);
+}
+
+// Function to open the bike modal with details
+function openBikeModal(bikeId) {
+    let bike = bikes.find(b => b.id === bikeId);
+
+    if (!bike) {
+        alert("Bike details not found.");
+        return;
+    }
+
+    document.getElementById("bikeName").innerText = bike.name;
+    document.getElementById("bikeImage").src = bike.image;
+    document.getElementById("bikeDescription").innerText = bike.description;
+
+    const modal = document.getElementById("bikeModal");
+    modal.style.display = "flex";
+
+    // Allow the browser to apply display:flex before starting the fade-in.
+    requestAnimationFrame(() => {
+        modal.classList.add("show");
+    });
+
+    document.body.style.overflow = "hidden";
+}
+
+// Function to close the modal
+function closeModal() {
+    const modal = document.getElementById("bikeModal");
+    modal.classList.remove("show");
+    document.body.style.overflow = "";
+    setTimeout(() => {
+        if (!modal.classList.contains("show")) modal.style.display = "none";
+    }, 250);
+}
+
+// Close the popup with the Escape key
+window.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeModal();
+});
+
+// Load bikes on page load
+window.onload = loadBikes;
+
+   </script>
+
+</body>
+</html>
